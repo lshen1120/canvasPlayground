@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="Scripts/jquery-1.4.1-vsdoc.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        window.onload = function () {
+            var video = document.getElementById("video");
+            var canvas = document.getElementById("myCanvas");
+            //得到2D渲染上下文
+            var context = canvas.getContext("2d");
+
+            var DrawCanvas = function () {
+                if (video.paused || video.ended)
+                    return false;
+
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                var imagedata = context.getImageData(0, 0, canvas.width, canvas.height);
+                var pdata = imagedata.data;
+                var numTilerows = 20;
+                var numTilecols = 20;
+                var tileWitdh = Math.floor(imagedata.width / numTilecols);
+                var tileHight = Math.floor(imagedata.height / numTilerows);
+
+                for (var i = 0; i < numTilerows; i++) {
+                    for (var j = 0; j < numTilecols; j++) {
+                        var tempData = context.getImageData(j * tileWitdh, i * tileHight, 1, 1).data;
+                        var pR = tempData[0];
+                        var pG = tempData[1];
+                        var pB = tempData[2];
+                        var pA = tempData[3];
+
+                        var pixelColor = "rgba(" + pR + "," + pG + "," + pB + "," + pA + ")";
+                        context.fillStyle = pixelColor;
+                        context.beginPath();
+                        context.arc(j * tileWitdh + tileWitdh / 2, i * tileHight + tileHight / 2, tileHight / 2, 0, Math.PI * 2, false);
+                        context.fill();
+                        //context.fillRect(j * tileWitdh, i * tileHight, tileWitdh, tileHight);
+                    }
+                }
+
+                setTimeout(DrawCanvas, 300);
+            }
+
+            video.onplay = function () {
+                DrawCanvas();
+
+
+            }
+
+            document.getElementById("play").onclick = function () {
+                video.play();
+            }
+            document.getElementById("stop").onclick = function () {
+                video.pause();
+            }
+        }
+    </script>
+</head>
+<body>
+<video width="728" height="2" controls="controls" autoplay="autoplay"  id="video" style="width: 728px; height: 450px;" tabindex="0">
+       <source type="video/ogg" src="google_main.ogv">
+       <source type="video/mp4" src="http://xant.us/files/google_main.mgv">
+       <div>Your browser doesn't support html5 video. <a href="http://www.mozilla.com/en-US/firefox/upgrade.html">Upgrade to Firefox 3.5</a></div>
+     </video>
+   <canvas width="728" height="450"  id="myCanvas" >
+     
+  </canvas>
+  <div>
+      <input type="button" id="play"  value="play"/>
+      <input type="button" id="stop"  value="stop"/>
+  </div>
+</body>
+</html>

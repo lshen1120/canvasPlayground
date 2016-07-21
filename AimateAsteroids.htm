@@ -1,0 +1,190 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <style>
+      #myButtons
+      {
+          bottom:20px;
+          left:20px;
+          position:absolute;
+          }
+       #myCanvas
+       {
+           background:#001022;
+           }
+    </style>
+    <script type="text/javascript">
+
+        window.onload = function () {
+            var canvas = document.getElementById("myCanvas");
+            var context = canvas.getContext("2d");
+            var bounce = -1;
+            //小行星类
+            function Asteroid(x, y, radius, vX, vY, aX, aY) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.vX = vX || 1;
+                this.vY = vY || 1;
+                this.aX = aX || 0;
+                this.aY = aY || 0;
+            }
+
+            function IsCloser(AsteroidA, AsteroidB, curDistance) {
+                var newAX = AsteroidA.x + AsteroidA.vX;
+                var newAY = AsteroidA.y + AsteroidA.vY;
+                var newBX = AsteroidB.x + AsteroidB.vX;
+                var newBY = AsteroidB.y + AsteroidB.vY;
+
+                var dX = newAX - newBX;
+                var dY = newAY - newBY;
+
+                var newDistance = Math.sqrt((dX * dX) + (dY * dY));
+
+                return newDistance <= curDistance;
+
+            }
+
+            //随机生成小行星类
+            var asteroids = [];
+            for (var i = 0; i < 10; i++) {
+                var x = 20 + Math.random() * (canvas.width - 20);
+                var y = 20 + Math.random() * (canvas.height - 20);
+                var radius = 15 + Math.random() * 10;
+                asteroids.push(new Asteroid(x, y, radius));
+            }
+
+            function animate() {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.fillStyle = "#FFFFFF";
+
+                var len = asteroids.length;
+                //运动循环
+                for (var i = 0; i < len; i++) {
+                    var tmpAsteroid = asteroids[i];
+
+                    //检测是否是边界，是的话速度反转速度和加速度
+                    if ((tmpAsteroid.x + tmpAsteroid.radius > canvas.width && tmpAsteroid.vX > 0)
+                        || (tmpAsteroid.x - tmpAsteroid.radius < 0 && tmpAsteroid.vX < 0)) {
+                        tmpAsteroid.vX *= -1;
+                    }
+
+                    if ((tmpAsteroid.y + tmpAsteroid.radius > canvas.height && tmpAsteroid.vY > 0)
+                       || (tmpAsteroid.y - tmpAsteroid.radius < 0 && tmpAsteroid.vY < 0)) {
+                        tmpAsteroid.vY *= -1;
+                    }
+
+
+
+                    //                                        //加速度在达到一定速度上限时不作用
+                    //                                        if (Math.abs(tmpAsteroid.vX) < 10)
+                    //                                            tmpAsteroid.vX += tmpAsteroid.aX;
+                    //                                        if (Math.abs(tmpAsteroid.vY) < 10)
+                    //                                            tmpAsteroid.vY += tmpAsteroid.aY;
+
+                    //                                        //模拟摩擦力,只是简单的将速度变为原来的0.9倍
+                    //                                        //实际真实情况应该是动力和摩擦力的合力产生加速度
+                    //                                        if (Math.abs(tmpAsteroid.vX) > 0.1) {
+                    //                                            tmpAsteroid.vX *= 0.9;
+                    //                                        }
+                    //                                        else {
+                    //                                            tmpAsteroid.vX = 0;
+                    //                                        }
+                    //                                        if (Math.abs(tmpAsteroid.vY) > 0.1) {
+                    //                                            tmpAsteroid.vY *= 0.9;
+                    //                                        }
+                    //                                        else {
+                    //                                            tmpAsteroid.vY = 0;
+                    //                                        }
+
+                    tmpAsteroid.x += tmpAsteroid.vX;
+                    tmpAsteroid.y += tmpAsteroid.vY;
+
+                    context.beginPath();
+                    context.arc(tmpAsteroid.x, tmpAsteroid.y, tmpAsteroid.radius, 0, Math.PI * 2, false);
+                    context.closePath();
+                    context.fill();
+                }
+
+                function Crash(tmpAsteroid, angle) {
+                    var sine = Math.sin(angle);
+                    var cosine = Math.cos(angle);
+                    var vXt = tmpAsteroid.vX * cosine + tmpAsteroid.vY * sine;
+                    var vYt = tmpAsteroid.vY * cosine - tmpAsteroid.vX * sine;
+                    tmpAsteroid.vY = vXt * cosine - vYt * sine;
+                    tmpAsteroid.vX = vYt * sine + vXt * cosine;
+
+                }
+
+                //碰撞检测
+                for (var i = 0; i < len; i++) {
+
+                    var tmpAsteroidA = asteroids[i];
+                    for (var j = i + 1; j < len; j++) {
+                        var tmpAsteroidB = asteroids[j];
+                        var dX = tmpAsteroidA.x - tmpAsteroidB.x;
+                        var dY = tmpAsteroidA.y - tmpAsteroidB.y;
+
+                        var distance = Math.sqrt((dX * dX) + (dY * dY));
+                        //碰撞处理
+                        if (distance < (tmpAsteroidA.radius + tmpAsteroidB.radius)
+                            && IsCloser(tmpAsteroidA, tmpAsteroidB, distance)) {
+
+                            tmpAsteroidA.vX *= -1;
+                            tmpAsteroidB.vX *= -1;
+                            tmpAsteroidA.vY *= -1;
+                            tmpAsteroidB.vY *= -1;
+
+                            var angle = Math.atan2(dY, dX);
+                            Rush(tmpAsteroidB, angle);
+                            // Rush(tmpAsteroidA, Math.atan2(dX, dY));
+                            break;
+                            var sine = Math.sin(angle);
+                            var cosine = Math.cos(angle);
+
+                            var x = 0, y = 0;
+                            var xB = dX * cosine + dY * sine;
+                            var yB = dY * cosine - dX * sine;
+
+                            var vX = tmpAsteroidA.vX * cosine + tmpAsteroidB.vY * sine;
+                            var vY = tmpAsteroidA.vY * cosine - tmpAsteroidB.vX * sine;
+
+                            var vXb = tmpAsteroidB.vX * cosine + tmpAsteroidB.vY * sine;
+                            var vYb = tmpAsteroidB.vY * cosine - tmpAsteroidB.vX * sine;
+
+                            vX *= -1;
+                            vY *= -1;
+                            xB = x + (tmpAsteroidA.radius + tmpAsteroidB.radius);
+
+                            tmpAsteroidA.x += (x * cosine - y * sine);
+                            tmpAsteroidA.y += (y * cosine + x * sine);
+
+                            tmpAsteroidB.x += (xB * cosine - yB * sine);
+                            tmpAsteroidB.y += (yB * cosine + xB * sine);
+
+                            tmpAsteroidA.vX = vX * cosine - vY * sine;
+                            tmpAsteroidA.vY = vY * cosine + vX * sine;
+
+                            tmpAsteroidB.vX = vXb * cosine - vYb * sine;
+                            tmpAsteroidB.vY = vYb * cosine - vXb * sine;
+
+                        }
+                    }
+                }
+                setTimeout(animate, 50);
+            }
+            animate();
+        }
+    </script>
+</head>
+<body>
+    <canvas id="myCanvas" width="500" height="500">你的浏览器不支持HTML5</canvas>
+    <div id="myButtons">
+        <button id="btnStart">
+            Start</button>
+        <button id="btnStop">
+            Stop</button>
+    </div>
+</body>
+</html>

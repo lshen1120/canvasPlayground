@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title></title>
+    <script type="text/javascript" src="Scripts/jquery-1.4.1-vsdoc.js"></script>
+    <script  type="text/javascript">
+        window.onload = function () {
+            var cancans = document.getElementById("myCanvas");
+            //得到2D渲染上下文
+            var context = document.getElementById("myCanvas").getContext("2d");
+
+            var img = new Image();
+            img.width = "500";
+            img.height = "400";
+            img.src = "images/Koala.jpg";
+
+            $(img).load(function () {
+
+                context.shadowBlur = 20;
+                context.shadowColor = "blue";
+                context.drawImage(img, 0, 0, 1024, 768, 0, 0, 500, 500);
+
+            });
+            $(cancans).click(function (e) {
+                var canvasOffset = $(cancans).offset();
+                var canvasX = Math.floor(e.pageX - canvasOffset.left);
+                var canvasY = Math.floor(e.pageY - canvasOffset.top);
+
+                var imageData = context.getImageData(canvasX, canvasY, 1, 1);
+                var pixel = imageData.data;
+                var pixelColor = "rgba(" + pixel[0] + "," + pixel[1] + "," + pixel[2] + "," + pixel[3] + ")";
+                $("body").css("backgroundColor", pixelColor);
+            });
+        };
+    </script>
+</head>
+<body>
+    <canvas id="myCanvas" height="500px" width="500px" style="border:1px black solid">
+    </canvas>
+</body>
+</html>

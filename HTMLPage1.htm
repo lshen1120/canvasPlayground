@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script type="text/javascript">
+        function TestObj(name) {
+            this.name = name;
+        }
+        var objs = [];
+        var obj;
+        function test() {
+            for (var i = 0; i < 100; i++) {
+                var name = "张磊" + i;
+                obj = new TestObj(name);
+                (function (target) {
+                    obj.printName = function () {
+                        
+                        console.log(target.name);
+                    }
+                } (obj))
+                objs.push(obj);
+            }
+        }
+        test();
+        for (var i in objs) {
+            document.writeln(objs[i].name);
+        }
+    </script>
+</head>
+<body>
+<canvas id="myCanvas" height="500" width="500"></canvas>
+</body>
+</html>

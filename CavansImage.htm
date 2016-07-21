@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title></title>
+    <script type="text/javascript" src="Scripts/jquery-1.4.1-vsdoc.js"></script>
+    <script  type="text/javascript">
+        $(function () {
+            onLoad();
+        });
+     
+          function onLoad() {
+            var cancans = document.getElementById("myCanvas");
+            //得到2D渲染上下文
+            var context = document.getElementById("myCanvas").getContext("2d");
+
+            var img = new Image();
+            img.width = "500";
+            img.height = "400";
+            img.src = "images/wsj.jpg";
+
+            img.onload = function () {
+
+                //context.drawImage(img, 0, 0); //默认图片大小
+                //context.drawImage(img, 10, 10, 100, 100)//指定大小
+                context.shadowBlur = 20;
+                context.shadowColor = "blue";
+                //图片裁剪 
+                //参数 源图，源图原点x,y坐标，源图在原点开始的宽长,画布开始画的点x,y,宽长
+                //drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+
+                //万花筒效果
+                //右下
+                context.translate(200, 200);
+                context.drawImage(img, 0, 0, 700, 700, 0, 0, 100, 100);
+                var imagedata = context.getImageData(0, 0, img.width, img.height);
+                //像素处理，反色
+                for (var i = 0, n = imagedata.data.length; i < n; i += 4) {
+                    imagedata.data[i + 0] = 255 - imagedata.data[i + 0];
+                    imagedata.data[i + 1] = 255 - imagedata.data[i + 1];
+                    imagedata.data[i + 2] = 255 - imagedata.data[i + 2];
+                }
+                context.putImageData(imagedata, 0, 0);
+
+
+                //左下
+                //先缩放，画布坐标已经改变，(-200,200)为原(200,200)位置
+                context.setTransform(1, 0, 0, 1, 0, 0);
+                context.scale(-1, 1);
+                context.translate(-200, 200);
+                context.drawImage(img, 0, 0, 700, 700, 0, 0, 100, 100);
+
+                //左上
+                //先定位，不需要重新转换位置
+                context.setTransform(1, 0, 0, 1, 0, 0);
+                context.translate(200, 200);
+                context.scale(-1, -1);
+                context.drawImage(img, 0, 0, 700, 700, 0, 0, 100, 100);
+
+                //右上
+                context.setTransform(1, 0, 0, 1, 0, 0);
+                context.translate(200, 200);
+                context.scale(1, -1);
+                context.drawImage(img, 0, 0, 700, 700, 0, 0, 100, 100);
+
+            }
+
+        };
+    </script>
+</head>
+<body>
+    <input type="button" id="btnRestore" value="Restore" >
+    <input type="button" id="btnSave" value="Save" >
+    <input type="button" id="btnDraw" value="Draw" >
+    <input type="text" id="txtColor" >
+    <canvas id="myCanvas" height="500px" width="500px" style="border:1px black solid">
+    </canvas>
+</body>
+</html>

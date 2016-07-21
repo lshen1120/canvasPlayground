@@ -1,0 +1,357 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <style>
+        #myButtons
+        {
+            bottom: 20px;
+            left: 20px;
+            position: absolute;
+        }
+        #myCanvas
+        {
+            background: #001022;
+        }
+    </style>
+    <script type="text/javascript">
+
+        window.onload = function () {
+
+            var canvas = document.getElementById("myCanvas");
+            var context = canvas.getContext("2d");
+            var isPlay = true;
+            var gameThread;
+            document.getElementById("btnStart").onclick = function () {
+                isPlay = true;
+                document.onkeydown = docKeyDown;
+                document.onkeyup = docKeyUp;
+                clearTimeout(gameThread);
+                animate();
+            };
+            document.getElementById("btnStop").onclick = function () {
+                document.onkeydown = null;
+                document.onkeyup = null;
+                isPlay = false;
+            }
+            document.onkeydown = docKeyDown;
+            document.onkeyup = docKeyUp;
+            //正向碰撞弹性系数
+            var bounce = -1;
+            //小行星类
+            function Asteroid(x, y, radius, vX, vY, aX, aY) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.vX = vX || 1;
+                this.vY = vY || 1;
+                this.aX = aX || 0;
+                this.aY = aY || 0;
+
+                this.color = randomColor();
+                this.mass = radius * radius;
+            }
+            //飞船类
+            function SpaceShip(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.vX = 0;
+                this.vY = 0;
+                this.aX = 0;
+                this.aY = 0;
+                this.mass = 8;
+                this.isAccelerate = false;
+                this.vRorate = 0;
+
+                var a = 0;
+                var rotate = 0;
+                var power = 0.5;
+
+                this.rotateShip = function (angle) {
+                    this.vRorate = angle / 180 * Math.PI;
+                }
+
+                this.speedUP = function () {
+                    this.vX += power * Math.cos(rotate);
+                    this.vY += power * Math.sin(rotate);
+
+                }
+                this.speedDown = function () {
+                    this.vX -= power * Math.cos(rotate);
+                    this.vY -= power * Math.sin(rotate);
+                }
+                this.updatePos = function () {
+
+
+                    this.x += this.vX;
+                    this.y += this.vY;
+                    rotate += this.vRorate;
+                    if (this.x - this.width / 2 > canvas.width) {
+                        this.x = -this.width / 2;
+                    }
+                    else if (this.x + this.width / 2 < 0) {
+                        this.x = canvas.width + this.width / 2;
+                    }
+                    if (this.y - this.height / 2 > canvas.width) {
+                        this.y = -this.height / 2;
+                    }
+                    else if (this.y + this.height / 2 < 0) {
+                        this.y = canvas.height + this.height / 2;
+                    }
+                }
+                this.draw = function (context) {
+                    if (this.isAccelerate == true)
+                        context.fillStyle = "red";
+                    else
+                        context.fillStyle = "#FFFFFF";
+                    context.translate(this.x, this.y);
+                    context.rotate(rotate);
+                    context.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+                    context.fillStyle = "blue";
+                    context.fillRect(-this.width / 2, -this.height / 2, this.width * 0.1, this.height);
+                    context.setTransform(1, 0, 0, 1, 0, 0);
+                }
+            }
+            //坐标类
+            function Point(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+
+            //随机生成小行星类
+            var asteroids = [];
+            for (var i = 0; i < 10; i++) {
+                var x = 20 + Math.random() * (canvas.width - 20);
+                var y = 20 + Math.random() * (canvas.height - 20);
+                var vx = 1 + 4 * Math.random();
+                var vy = 1 + 4 * Math.random();
+                var radius = 15 + Math.random() * 10;
+                asteroids.push(new Asteroid(x, y, radius, vx, vy));
+            }
+            var spaceShip = new SpaceShip(200, 200, 40, 30);
+
+            function animate() {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.fillStyle = "#FFFFFF";
+
+                var len = asteroids.length;
+                //运动循环
+                for (var i = 0; i < len; i++) {
+                    var tmpAsteroid = asteroids[i];
+
+                    tmpAsteroid.x += tmpAsteroid.vX;
+                    tmpAsteroid.y += tmpAsteroid.vY;
+
+                    checkWalls(tmpAsteroid);
+                    context.fillStyle = tmpAsteroid.color;
+                    context.beginPath();
+                    context.arc(tmpAsteroid.x, tmpAsteroid.y, tmpAsteroid.radius, 0, Math.PI * 2, false);
+                    context.closePath();
+                    context.fill();
+                }
+                spaceShip.updatePos();
+                spaceShip.draw(context);
+
+                //碰撞检测
+                for (var i = 0; i < len; i++) {
+
+                    var tmpAsteroidA = asteroids[i];
+                    for (var j = i + 1; j < len; j++) {
+                        var tmpAsteroidB = asteroids[j];
+                        var dX = tmpAsteroidA.x - tmpAsteroidB.x;
+                        var dY = tmpAsteroidA.y - tmpAsteroidB.y;
+
+                        var distance = Math.sqrt((dX * dX) + (dY * dY));
+                        //碰撞处理
+                        if (distance < (tmpAsteroidA.radius + tmpAsteroidB.radius)
+                            && IsCloser(tmpAsteroidA, tmpAsteroidB, distance)) {
+
+                            checkCollision(tmpAsteroidA, tmpAsteroidB);
+                        }
+                    }
+                }
+                if (isPlay)
+                    gameThread = setTimeout(animate, 50);
+            }
+            animate();
+
+            function docKeyDown(e) {
+                switch (e.keyCode) {
+                    case 37: //左
+                        spaceShip.rotateShip(-5);
+                        break
+                    case 38: //上
+                        spaceShip.isAccelerate = true;
+                        spaceShip.speedUP();
+                        break
+                    case 39: //右
+                        spaceShip.rotateShip(5);
+                        break
+                    case 40: //下
+                        spaceShip.speedDown();
+                        break
+                    default:
+
+                }
+
+            }
+            function docKeyUp(e) {
+
+                spaceShip.isAccelerate = false;
+                spaceShip.vRorate = 0;
+            }
+            //随即颜色生成
+            function randomColor() {
+                //16进制方式表示颜色0-F
+                var arrHex = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
+                var strHex = "#";
+                var index;
+                for (var i = 0; i < 6; i++) {
+                    //取得0-15之间的随机整数
+                    index = Math.round(Math.random() * 15);
+                    strHex += arrHex[index];
+                }
+                return strHex;
+            }
+            function IsCloser(AsteroidA, AsteroidB, curDistance) {
+                var newAX = AsteroidA.x + AsteroidA.vX;
+                var newAY = AsteroidA.y + AsteroidA.vY;
+                var newBX = AsteroidB.x + AsteroidB.vX;
+                var newBY = AsteroidB.y + AsteroidB.vY;
+
+                var dX = newAX - newBX;
+                var dY = newAY - newBY;
+
+                var newDistance = Math.sqrt((dX * dX) + (dY * dY));
+
+                return newDistance <= curDistance;
+
+            }
+
+            //检查边界
+            function checkWalls(asteroid) {
+                if (asteroid.x + asteroid.radius > canvas.width) {
+                    asteroid.x = canvas.width - asteroid.radius;
+                    asteroid.vX *= -1;
+                }
+                else if (asteroid.x - asteroid.radius < 0) {
+                    asteroid.x = asteroid.radius;
+                    asteroid.vX *= -1;
+                }
+                if (asteroid.y + asteroid.radius > canvas.width) {
+                    asteroid.y = canvas.height - asteroid.radius;
+                    asteroid.vY *= -1;
+                }
+                else if (asteroid.y - asteroid.radius < 0) {
+                    asteroid.y = asteroid.radius;
+                    asteroid.vY *= bounce;
+                }
+            }
+            //坐标旋转
+            function rotate(x, y, sin, cos, reverse) {
+                var result = {};
+                if (reverse) {
+                    result.x = x * cos + y * sin;
+                    result.y = y * cos - x * sin;
+                }
+                else {
+                    result.x = x * cos - y * sin;
+                    result.y = y * cos + x * sin;
+                }
+                return result;
+            }
+
+
+            //碰撞处理
+            function checkCollision(asteroid0, asteroid1) {
+
+                var dx = asteroid1.x - asteroid0.x;
+                var dy = asteroid1.y - asteroid0.y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < asteroid0.radius + asteroid1.radius) {
+
+                    var angle = Math.atan2(dy, dx);
+                    var sin = Math.sin(angle);
+                    var cos = Math.cos(angle);
+
+                    //旋转坐标
+                    var pos0 = new Point(0, 0);
+                    var pos1 = rotate(dx, dy, sin, cos, true);
+
+                    //旋转速度
+                    var vel0 = rotate(asteroid0.vX,
+										asteroid0.vY,
+										sin,
+										cos,
+										true);
+                    
+                    var vel1 = rotate(asteroid1.vX,
+										asteroid1.vY,
+										sin,
+										cos,
+										true);
+
+
+                    var vXTotal = vel0.x - vel1.x;
+
+                    vel0.x = ((asteroid0.mass - asteroid1.mass) * vel0.x +
+				          2 * asteroid1.mass * vel1.x) /
+				          (asteroid0.mass + asteroid1.mass);
+                    vel1.x = vXTotal + vel0.x;
+
+                    // 更新位置
+                    pos0.x += vel0.x;
+                    pos1.x += vel1.x;
+
+                    // 转回坐标
+                    var pos0F = rotate(pos0.x,
+										  pos0.y,
+										  sin,
+										  cos,
+										  false);
+
+                    var pos1F = rotate(pos1.x,
+										  pos1.y,
+										  sin,
+										  cos,
+										  false);
+
+                    // 转换为原坐标系的坐标
+                    asteroid1.x = asteroid0.x + pos1F.x;
+                    asteroid1.y = asteroid0.y + pos1F.y;
+                    asteroid0.x = asteroid0.x + pos0F.x;
+                    asteroid0.y = asteroid0.y + pos0F.y;
+
+                    // 转换为原坐标系的速度
+                    var vel0F = rotate(vel0.x,
+										  vel0.y,
+										  sin,
+										  cos,
+										  false);
+                    var vel1F = rotate(vel1.x,
+										  vel1.y,
+										  sin,
+										  cos,
+										  false);
+                    asteroid0.vX = vel0F.x;
+                    asteroid0.vY = vel0F.y;
+                    asteroid1.vX = vel1F.x;
+                    asteroid1.vY = vel1F.y;
+                }
+            }
+
+        }
+    </script>
+</head>
+<body>
+    <canvas id="myCanvas" width="500" height="500">你的浏览器不支持HTML5</canvas>
+    <div id="myButtons">
+        <button id="btnStart">
+            Start</button>
+        <button id="btnStop">
+            Stop</button>
+    </div>
+</body>
+</html>
